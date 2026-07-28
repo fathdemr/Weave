@@ -1,3 +1,4 @@
+import type { ProviderModel } from '../providers/types';
 import type { PublicSettings, SettingsPatch } from '../settings/schema';
 
 /**
@@ -55,8 +56,15 @@ export interface BackgroundMessages extends MessageSchema {
   ping: { request: void; response: PongResponse };
   'settings:get': { request: void; response: PublicSettings };
   'settings:update': { request: SettingsPatch; response: PublicSettings };
-  /** Not implemented until Phase 1; the contract is fixed now. */
   'translate:text': { request: TranslateTextRequest; response: TranslateTextResponse };
+  /** Models the configured provider can actually serve right now. */
+  'models:list': { request: void; response: ModelsListResponse };
+}
+
+export interface ModelsListResponse {
+  models: ProviderModel[];
+  /** True when the list came from the provider rather than the fallback. */
+  live: boolean;
 }
 
 /** Messages the service worker may send into a tab's content script. */

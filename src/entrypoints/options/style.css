@@ -101,6 +101,17 @@ button:focus-visible {
   font-size: 0.85rem;
 }
 
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.row select {
+  flex: 1;
+  min-width: 0;
+}
+
 code {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -147,6 +158,14 @@ button {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .status {

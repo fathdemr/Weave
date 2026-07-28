@@ -20,5 +20,6 @@ export function unwrap<T>(result: Result<T>): T {
   if (result.ok) return result.data;
   throw new WeaveError(result.error.code, result.error.message, {
     retryable: result.error.retryable,
+    retryAfterMs: result.error.retryAfterMs,
   });
 }

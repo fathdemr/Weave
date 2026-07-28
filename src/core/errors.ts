@@ -19,6 +19,8 @@ export const ErrorCode = {
   PROVIDER_ERROR: 'PROVIDER_ERROR',
   /** The provider is rate limiting us; retrying later may succeed. */
   RATE_LIMITED: 'RATE_LIMITED',
+  /** The provider is temporarily overloaded — not the user's fault. */
+  PROVIDER_OVERLOADED: 'PROVIDER_OVERLOADED',
   /** The request could not reach the provider (offline, DNS, CORS). */
   NETWORK_ERROR: 'NETWORK_ERROR',
 } as const;
@@ -31,25 +33,35 @@ export interface WeaveErrorPayload {
   message: string;
   /** Whether retrying the exact same request could plausibly succeed. */
   retryable: boolean;
+  /** How long the provider asked us to wait, when it said so. */
+  retryAfterMs?: number;
 }
 
 export class WeaveError extends Error {
   readonly code: ErrorCode;
   readonly retryable: boolean;
+  readonly retryAfterMs: number | undefined;
 
   constructor(
     code: ErrorCode,
     message: string,
-    options?: { retryable?: boolean; cause?: unknown },
+    options?: { retryable?: boolean; retryAfterMs?: number; cause?: unknown },
   ) {
     super(message, { cause: options?.cause });
     this.name = 'WeaveError';
     this.code = code;
     this.retryable = options?.retryable ?? false;
+    this.retryAfterMs = options?.retryAfterMs;
   }
 
   toPayload(): WeaveErrorPayload {
-    return { code: this.code, message: this.message, retryable: this.retryable };
+    const payload: WeaveErrorPayload = {
+      code: this.code,
+      message: this.message,
+      retryable: this.retryable,
+    };
+    if (this.retryAfterMs !== undefined) payload.retryAfterMs = this.retryAfterMs;
+    return payload;
   }
 
   /** Normalizes anything thrown into a WeaveError so callers get one shape. */

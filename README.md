@@ -6,8 +6,9 @@ Weave translates web pages with an AI model of your choice, using _your_ API key
 around one idea: a translation should stay faithful to the document it lives in — its terminology,
 its domain, and the paragraphs around it — instead of being a word-by-word swap.
 
-> **Status: Phase 0 — skeleton.** The extension builds, loads, and its messaging layer works
-> end to end. Translation itself lands in Phase 1. See the [roadmap](#roadmap).
+> **Status: Phase 1 — MVP.** Right-click any page (or selection) and translate it with your
+> Gemini key, rendered as replace or dual view. Context features — chunked neighbouring context,
+> translation memory, glossaries — land in Phase 2. See the [roadmap](#roadmap).
 
 ---
 
@@ -76,6 +77,15 @@ Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpack
 ### Configure
 
 Open the extension's options page and enter your API key, target language, and render mode.
+
+### Translate
+
+- **Whole page** — click the Weave toolbar icon, or right-click anywhere and choose
+  _Translate page with Weave_.
+- **Selection** — select text, right-click, and choose _Translate selection with Weave_.
+
+Progress and errors appear as a small pill in the corner of the page — never a popup over what
+you are reading.
 
 ### Scripts
 
@@ -165,7 +175,7 @@ export const myProvider: TranslationProvider = {
 
 - [x] **Phase 0 — Skeleton.** WXT + TypeScript, lint/format, MIT license, working service worker ↔
       content script messaging.
-- [ ] **Phase 1 — MVP.** Gemini provider, API key entry, translate a selection or a whole page.
+- [x] **Phase 1 — MVP.** Gemini provider, API key entry, translate a selection or a whole page.
 - [ ] **Phase 2 — Context & quality.** Chunking with neighbouring context, translation memory,
       base glossaries, Replace + Dual-view rendering.
 - [ ] **Phase 3 — Domains & providers.** Domain detection, provider adapters (OpenAI, Anthropic),
