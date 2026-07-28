@@ -1,3 +1,4 @@
+import { AUTO_DETECT, LANGUAGES } from '@/core/languages';
 import { createLogger } from '@/core/logger';
 import { sendToBackground } from '@/core/messaging/client';
 import type { PublicSettings, RenderMode, SettingsPatch } from '@/core/settings/schema';
@@ -18,6 +19,7 @@ const apiKeyInput = requireElement<HTMLInputElement>('#apiKey');
 void init();
 
 async function init(): Promise<void> {
+  populateLanguageSelects();
   const result = await sendToBackground('settings:get');
   if (!result.ok) {
     setStatus(`Could not load settings: ${result.error.message}`, 'error');
@@ -55,11 +57,22 @@ form.addEventListener('submit', async (event) => {
   setStatus('Saved.');
 });
 
+function populateLanguageSelects(): void {
+  const source = requireElement<HTMLSelectElement>('#sourceLanguage');
+  const target = requireElement<HTMLSelectElement>('#targetLanguage');
+
+  source.append(new Option('Auto-detect', AUTO_DETECT));
+  for (const { tag, label } of LANGUAGES) {
+    source.append(new Option(label, tag));
+    target.append(new Option(label, tag));
+  }
+}
+
 function applySettings(settings: PublicSettings): void {
   requireElement<HTMLSelectElement>('#provider').value = settings.provider;
   requireElement<HTMLInputElement>('#model').value = settings.model;
-  requireElement<HTMLInputElement>('#sourceLanguage').value = settings.sourceLanguage;
-  requireElement<HTMLInputElement>('#targetLanguage').value = settings.targetLanguage;
+  selectLanguage(requireElement<HTMLSelectElement>('#sourceLanguage'), settings.sourceLanguage);
+  selectLanguage(requireElement<HTMLSelectElement>('#targetLanguage'), settings.targetLanguage);
 
   const mode = form.querySelector<HTMLInputElement>(
     `input[name="renderMode"][value="${settings.renderMode}"]`,
@@ -82,6 +95,17 @@ function setStatus(message: string, tone: 'info' | 'error' = 'info'): void {
   status.textContent = message;
   status.dataset.tone = tone;
   if (tone === 'error') log.error(message);
+}
+
+/**
+ * Selects a stored tag, adding an option on the fly when it is not in the
+ * curated list — a hand-edited setting must never be silently replaced.
+ */
+function selectLanguage(select: HTMLSelectElement, tag: string): void {
+  if (![...select.options].some((option) => option.value === tag)) {
+    select.append(new Option(tag, tag));
+  }
+  select.value = tag;
 }
 
 function readString(data: FormData, field: string): string {
