@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.output/
+.wxt/
+*.zip
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Local environment
+.env
+.env.local
+
+# Internal working notes (kept out of the public repo for now)
+docs/

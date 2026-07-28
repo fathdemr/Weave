@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste your API key into an issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open https://…
+        2. Trigger a translation
+        3. …
+    validations:
+      required: true
+
+  - type: input
+    id: page
+    attributes:
+      label: Page the problem occurs on
+      description: A public URL helps enormously for DOM-related bugs.
+
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, extension version, provider and model
+      placeholder: Chrome 131, Weave 0.1.0, Gemini 2.0 Flash
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Errors prefixed with `[weave:…]`, with any secrets removed.
+      render: shell

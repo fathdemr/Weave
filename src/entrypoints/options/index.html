@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weave — Settings</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <h1>Weave</h1>
+        <p class="subtitle">Context-aware AI translation. Your key, your browser, no backend.</p>
+      </header>
+
+      <form id="settings-form" class="card" autocomplete="off">
+        <section class="field">
+          <label for="provider">Provider</label>
+          <select id="provider" name="provider">
+            <option value="gemini">Google Gemini</option>
+          </select>
+          <p class="hint">More providers arrive in Phase 3.</p>
+        </section>
+
+        <section class="field">
+          <label for="model">Model</label>
+          <input id="model" name="model" type="text" spellcheck="false" />
+        </section>
+
+        <section class="field">
+          <label for="apiKey">API key</label>
+          <input
+            id="apiKey"
+            name="apiKey"
+            type="password"
+            spellcheck="false"
+            placeholder="Paste your key"
+          />
+          <p class="hint">
+            Stored only in this browser's local storage and used only by the extension's background
+            worker. It is never sent to a Weave server — there isn't one.
+          </p>
+        </section>
+
+        <section class="field">
+          <label for="sourceLanguage">Source language</label>
+          <input id="sourceLanguage" name="sourceLanguage" type="text" spellcheck="false" />
+          <p class="hint">Use <code>auto</code> to let the model detect it.</p>
+        </section>
+
+        <section class="field">
+          <label for="targetLanguage">Target language</label>
+          <input id="targetLanguage" name="targetLanguage" type="text" spellcheck="false" />
+          <p class="hint">BCP 47 tag, e.g. <code>tr</code>, <code>en</code>, <code>de</code>.</p>
+        </section>
+
+        <fieldset class="field">
+          <legend>Render mode</legend>
+          <label class="choice">
+            <input type="radio" name="renderMode" value="replace" />
+            <span>
+              <strong>Replace</strong>
+              <small
+                >The translation takes the original text's place. Clean, single-language
+                reading.</small
+              >
+            </span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="renderMode" value="dual-view" />
+            <span>
+              <strong>Dual view</strong>
+              <small
+                >The translation appears under the original. Best for comparing and for language
+                learners.</small
+              >
+            </span>
+          </label>
+        </fieldset>
+
+        <footer class="actions">
+          <button type="submit">Save</button>
+          <output id="status" class="status" role="status" aria-live="polite"></output>
+        </footer>
+      </form>
+
+      <p class="worker-status" id="worker-status">Checking background worker…</p>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
