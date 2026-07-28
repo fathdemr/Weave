@@ -5,6 +5,7 @@ import { createRouter } from '@/core/messaging/router';
 import type { BackgroundMessages } from '@/core/messaging/protocol';
 import { geminiProvider } from '@/core/providers/gemini';
 import { getProvider, registerProvider } from '@/core/providers/registry';
+import { withRetry } from '@/core/retry';
 import { toPublicSettings } from '@/core/settings/schema';
 import { readSettings, writeSettings } from '@/core/settings/storage';
 
@@ -46,15 +47,20 @@ export default defineBackground(() => {
       }
 
       const provider = getProvider(settings.provider);
-      const result = await provider.translate(
-        {
-          segments,
-          context: {
-            sourceLanguage: settings.sourceLanguage,
-            targetLanguage: targetLanguage ?? settings.targetLanguage,
+      // Overload and rate limiting are routine and usually clear in seconds;
+      // absorbing them here keeps a transient blip from surfacing as a failed
+      // translation the user can do nothing about.
+      const result = await withRetry(() =>
+        provider.translate(
+          {
+            segments,
+            context: {
+              sourceLanguage: settings.sourceLanguage,
+              targetLanguage: targetLanguage ?? settings.targetLanguage,
+            },
           },
-        },
-        { apiKey: settings.apiKey, model: settings.model },
+          { apiKey: settings.apiKey, model: settings.model },
+        ),
       );
 
       return { segments: result.segments };

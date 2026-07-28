@@ -153,9 +153,14 @@ async function toProviderError(response: Response): Promise<WeaveError> {
     // A non-JSON error body; the status code is all we have.
   }
 
+  // Providers state how long to wait when they know; honouring it beats
+  // guessing with backoff.
+  const retryAfterMs = parseRetryAfter(response.headers.get('retry-after'));
+
   if (response.status === 429) {
     return new WeaveError(ErrorCode.RATE_LIMITED, 'Gemini is rate limiting requests', {
       retryable: true,
+      retryAfterMs,
     });
   }
   if (response.status === 401 || response.status === 403) {
@@ -164,11 +169,29 @@ async function toProviderError(response: Response): Promise<WeaveError> {
       'Gemini rejected the API key — check it in the extension options',
     );
   }
+  if (response.status === 503 || response.status === 502 || response.status === 504) {
+    return new WeaveError(ErrorCode.PROVIDER_OVERLOADED, 'Gemini is busy right now', {
+      retryable: true,
+      retryAfterMs,
+    });
+  }
   return new WeaveError(
     ErrorCode.PROVIDER_ERROR,
     `Gemini request failed (HTTP ${response.status})${detail ? `: ${detail}` : ''}`,
-    { retryable: response.status >= 500 },
+    { retryable: response.status >= 500, retryAfterMs },
   );
+}
+
+/** Reads a Retry-After header, which may be seconds or an HTTP date. */
+function parseRetryAfter(header: string | null): number | undefined {
+  if (!header) return undefined;
+
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+
+  const date = Date.parse(header);
+  if (Number.isNaN(date)) return undefined;
+  return Math.max(0, date - Date.now());
 }
 
 function parseSegments(response: GeminiResponse, expectedCount: number): string[] {

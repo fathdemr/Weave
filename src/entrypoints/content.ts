@@ -115,8 +115,14 @@ async function translate(selectionOnly: boolean): Promise<void> {
 
       if (!result.ok) {
         log.error('translation batch failed', result.error);
-        const suffix = result.error.code === ErrorCode.RATE_LIMITED ? ' — try again shortly' : '';
-        showStatus(`Weave: ${result.error.message}${suffix}`, 'error');
+        // The worker already retried a transient failure, so reaching here
+        // means waiting is genuinely the only option left.
+        const transient =
+          result.error.code === ErrorCode.RATE_LIMITED ||
+          result.error.code === ErrorCode.PROVIDER_OVERLOADED;
+        const suffix = transient ? ' — try again in a moment' : '';
+        const progress = done > 0 ? ` (${done}/${blocks.length} done)` : '';
+        showStatus(`Weave: ${result.error.message}${suffix}${progress}`, 'error');
         return;
       }
 
