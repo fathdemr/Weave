@@ -1,0 +1,10 @@
+# Every change requires a review from a maintainer.
+# Contributors cannot approve their own work into a protected branch.
+* @fathdemr
+
+# Anything that can weaken the security posture of the extension.
+/.github/ @fathdemr
+/src/entrypoints/background.ts @fathdemr
+/src/core/settings/ @fathdemr
+/src/core/providers/ @fathdemr
+/wxt.config.ts @fathdemr

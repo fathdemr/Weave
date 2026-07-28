@@ -187,6 +187,10 @@ export const myProvider: TranslationProvider = {
 Contributions are welcome — glossaries and provider adapters especially. Start with
 [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
+Work happens on `dev`: branch off it, open your pull request against it, and it reaches `main` only
+as part of an approved release. Both branches are protected — see
+[docs/BRANCHING.md](docs/BRANCHING.md).
+
 ## License
 
 [MIT](LICENSE)
