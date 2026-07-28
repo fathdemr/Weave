@@ -1,0 +1,63 @@
+name: Branch policy
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+# Branch protection cannot express "main only accepts dev", so this job does.
+# It is a required check on main, which makes the rule unbypassable through
+# the UI: a pull request from a feature branch straight into main fails here.
+jobs:
+  target:
+    name: Pull request targets an allowed branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate base and head branches
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          echo "Pull request: $HEAD -> $BASE"
+
+          case "$BASE" in
+            main)
+              # Releases flow from dev; hotfix/* exists for production-only fixes.
+              case "$HEAD" in
+                dev|hotfix/*)
+                  echo "Allowed: $HEAD may be merged into main."
+                  ;;
+                *)
+                  echo "::error::Pull requests into 'main' may only come from 'dev' or a 'hotfix/*' branch. Retarget this pull request at 'dev'."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            dev)
+              # All development lands here first.
+              case "$HEAD" in
+                main|dev)
+                  echo "::error::'$HEAD' cannot be merged into 'dev'. Open a feature branch instead."
+                  exit 1
+                  ;;
+                *)
+                  echo "Allowed: feature branch $HEAD may be merged into dev."
+                  ;;
+              esac
+              ;;
+            *)
+              echo "::error::Pull requests must target 'dev' (features and fixes) or 'main' (releases from dev)."
+              exit 1
+              ;;
+          esac
+
+      - name: Validate branch naming
+        if: github.base_ref == 'dev'
+        env:
+          HEAD: ${{ github.head_ref }}
+        run: |
+          # Keeps the history scannable and lets automation reason about intent.
+          if ! echo "$HEAD" | grep -Eq '^(feat|fix|docs|refactor|chore|test|perf|ci)/[a-z0-9._-]+$'; then
+            echo "::error::Branch '$HEAD' does not follow '<type>/<short-description>', e.g. 'feat/gemini-provider'. Allowed types: feat, fix, docs, refactor, chore, test, perf, ci."
+            exit 1
+          fi
+          echo "Branch name is valid."

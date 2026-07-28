@@ -13,6 +13,23 @@ npm run check    # type check + lint + format check — run before every PR
 
 Node 20 or newer, npm as the package manager. Do not commit lockfiles from other package managers.
 
+## Branching
+
+**All work branches off `dev` and is merged back into `dev`. Nothing goes into `main` except an
+approved release from `dev`.** `dev` is the default branch, so a fork and a fresh clone start in
+the right place.
+
+```bash
+git checkout dev && git pull
+git checkout -b feat/gemini-provider    # <type>/<short-description>
+```
+
+Allowed branch types: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `perf`, `ci`. Both the
+target branch and the branch name are checked by CI — a pull request aimed at `main` from a feature
+branch is rejected automatically.
+
+The full policy, including hotfixes, is in [docs/BRANCHING.md](docs/BRANCHING.md).
+
 ## Ground rules
 
 - **All code, comments, commit messages, and user-facing strings are in English.** Discussion in
@@ -40,10 +57,15 @@ Node 20 or newer, npm as the package manager. Do not commit lockfiles from other
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`,
   `refactor:`, `chore:`.
+- **Target `dev`.** Pull requests into `main` are rejected unless they come from `dev` or a
+  `hotfix/*` branch.
 - Keep a PR focused on one thing. Several small PRs merge faster than one large one.
 - Describe what you changed and how you verified it. For anything that touches the DOM, say which
   sites you tested on.
 - `npm run check` must pass. CI runs the same command.
+- Every pull request needs an approving review from a maintainer, CI green, and all conversations
+  resolved. Feature branches are squash merged, so your PR title becomes the commit message —
+  write it as one.
 
 ## Reporting a security issue
 

@@ -1,9 +1,12 @@
 name: CI
 
+# `pull_request` (never `pull_request_target`) so a fork's code runs with a
+# read-only token and no access to repository secrets.
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
+    branches: [main, dev]
 
 jobs:
   check:
