@@ -17,7 +17,10 @@ export default defineConfig({
     short_name: 'Weave',
     description:
       'Context-aware AI translation that keeps terminology consistent. Bring your own API key.',
-    permissions: ['storage', 'activeTab', 'scripting'],
+    permissions: ['storage', 'activeTab', 'scripting', 'contextMenus'],
+    action: {
+      default_title: 'Translate this page with Weave',
+    },
     // Provider endpoints are requested from the service worker only, never
     // from a content script, so the API key can never leak into a web page.
     host_permissions: ['https://generativelanguage.googleapis.com/*'],
