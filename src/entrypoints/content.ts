@@ -23,6 +23,17 @@ const MAX_BATCH_CHARS = 6000;
 let translating = false;
 
 /**
+ * Guards against double initialization.
+ *
+ * The worker injects this script on demand when a tab has no receiver. All
+ * injections share one isolated world, so a global flag there tells a second
+ * run to stand down instead of registering a duplicate message listener.
+ */
+interface ContentScriptWorld {
+  __weaveReady?: boolean;
+}
+
+/**
  * Content script — reads the page and paints translations onto it.
  *
  * It is untrusted by design: it never holds the API key and never calls a
@@ -33,6 +44,13 @@ export default defineContentScript({
   runAt: 'document_idle',
 
   main() {
+    const world = globalThis as ContentScriptWorld;
+    if (world.__weaveReady) {
+      log.debug('already initialized in this tab');
+      return;
+    }
+    world.__weaveReady = true;
+
     const router = createRouter<TabMessages>('content');
 
     router

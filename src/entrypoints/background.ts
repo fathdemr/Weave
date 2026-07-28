@@ -93,10 +93,39 @@ export default defineBackground(() => {
 });
 
 async function requestPageTranslation(tabId: number, selectionOnly: boolean): Promise<void> {
-  const result = await sendToTab(tabId, 'page:translate', { selectionOnly });
-  if (!result.ok) {
-    // Typically a page where content scripts cannot run (chrome://, the Web
-    // Store). Nothing useful can be shown there, so log and move on.
-    log.warn('page translation request failed', result.error);
+  const payload = { selectionOnly };
+
+  let result = await sendToTab(tabId, 'page:translate', payload);
+  if (result.ok) return;
+
+  // No receiver: the tab was open before the extension was installed or
+  // reloaded, so its content script never ran (or was orphaned by a reload).
+  // activeTab lets us inject it on demand instead of asking for a refresh.
+  if (await injectContentScript(tabId)) {
+    result = await sendToTab(tabId, 'page:translate', payload);
+    if (result.ok) return;
+  }
+
+  // Anything left is a page where content scripts cannot run at all
+  // (chrome://, the Web Store). Nothing can be rendered there.
+  log.warn('page translation request failed', result.error);
+}
+
+/** Injects the declared content script into a tab. Returns false if blocked. */
+async function injectContentScript(tabId: number): Promise<boolean> {
+  // Read the paths from the manifest so a build-output rename cannot silently
+  // break injection.
+  const files = chrome.runtime.getManifest().content_scripts?.flatMap((entry) => entry.js ?? []);
+  if (!files?.length) {
+    log.error('no content script declared in the manifest');
+    return false;
+  }
+
+  try {
+    await chrome.scripting.executeScript({ target: { tabId, allFrames: false }, files });
+    return true;
+  } catch (error) {
+    log.warn('content script injection blocked for this page', error);
+    return false;
   }
 }
