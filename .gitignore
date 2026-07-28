@@ -23,5 +23,5 @@ npm-debug.log*
 .env
 .env.local
 
-# Internal working notes (kept out of the public repo for now)
-docs/
+# Internal working notes (public docs in docs/ are tracked)
+docs/plan.md
