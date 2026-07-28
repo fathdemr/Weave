@@ -60,6 +60,28 @@ export default defineBackground(() => {
       return { segments: result.segments };
     })
 
+    .on('models:list', async () => {
+      const settings = await readSettings();
+      const provider = getProvider(settings.provider);
+      const fallback = provider.supportedModels.map((id) => ({ id, label: id }));
+
+      // Without a key there is nobody to ask; the fallback still lets the
+      // user see what the adapter expects.
+      if (!settings.apiKey || !provider.listModels) {
+        return { models: fallback, live: false };
+      }
+
+      try {
+        const models = await provider.listModels({ apiKey: settings.apiKey });
+        return models.length > 0 ? { models, live: true } : { models: fallback, live: false };
+      } catch (error) {
+        // A bad key or a network blip should not leave the user without a
+        // usable model list.
+        log.warn('could not fetch the live model list', error);
+        return { models: fallback, live: false };
+      }
+    })
+
     .listen();
 
   chrome.runtime.onInstalled.addListener(async ({ reason }) => {

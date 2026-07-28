@@ -46,12 +46,26 @@ export interface TranslationProvider {
   readonly id: ProviderId;
   /** Human readable name shown in the options page. */
   readonly label: string;
-  /** Model identifiers the adapter is known to work with. */
+  /**
+   * Fallback model list, used when the provider cannot be queried (no key
+   * yet, offline). Providers retire models often, so this is a starting
+   * point — `listModels` is the source of truth.
+   */
   readonly supportedModels: readonly string[];
   /** URL where a user can obtain an API key. */
   readonly apiKeyUrl: string;
 
   translate(request: TranslationRequest, config: ProviderConfig): Promise<TranslationResult>;
+
+  /** Queries the provider for models that can actually be used right now. */
+  listModels?(config: Pick<ProviderConfig, 'apiKey' | 'baseUrl'>): Promise<ProviderModel[]>;
+}
+
+export interface ProviderModel {
+  /** Identifier sent to the API. */
+  id: string;
+  /** Human readable name shown in the options page. */
+  label: string;
 }
 
 export interface ProviderConfig {

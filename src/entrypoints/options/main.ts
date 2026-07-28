@@ -15,6 +15,8 @@ const form = requireElement<HTMLFormElement>('#settings-form');
 const status = requireElement<HTMLOutputElement>('#status');
 const workerStatus = requireElement<HTMLParagraphElement>('#worker-status');
 const apiKeyInput = requireElement<HTMLInputElement>('#apiKey');
+const modelSelect = requireElement<HTMLSelectElement>('#model');
+const modelHint = requireElement<HTMLParagraphElement>('#model-hint');
 
 void init();
 
@@ -26,7 +28,42 @@ async function init(): Promise<void> {
     return;
   }
   applySettings(result.data);
-  await refreshWorkerStatus();
+  await Promise.all([refreshWorkerStatus(), refreshModels()]);
+}
+
+requireElement<HTMLButtonElement>('#reload-models').addEventListener('click', () => {
+  void refreshModels();
+});
+
+/**
+ * Loads the models the configured key can actually use.
+ *
+ * Providers retire models regularly, so a hardcoded list goes stale and the
+ * user only finds out through a failed translation.
+ */
+async function refreshModels(): Promise<void> {
+  const selected = modelSelect.value;
+  modelHint.textContent = 'Loading models…';
+
+  const result = await sendToBackground('models:list');
+  if (!result.ok) {
+    modelHint.textContent = `Could not load models: ${result.error.message}`;
+    return;
+  }
+
+  const { models, live } = result.data;
+  modelSelect.replaceChildren();
+  for (const model of models) {
+    modelSelect.append(new Option(model.label, model.id));
+  }
+
+  // Keep the saved model selected even if the provider no longer lists it,
+  // so saving the form cannot silently switch models behind the user's back.
+  if (selected) selectOption(modelSelect, selected, `${selected} (not offered by your key)`);
+
+  modelHint.textContent = live
+    ? `${models.length} models available to your key.`
+    : 'Showing known models — save a valid API key and reload to see what your account can use.';
 }
 
 form.addEventListener('submit', async (event) => {
@@ -52,9 +89,13 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
+  const keyChanged = Boolean(apiKey);
   apiKeyInput.value = '';
   applySettings(result.data);
   setStatus('Saved.');
+
+  // A new key may unlock a different set of models.
+  if (keyChanged) await refreshModels();
 });
 
 function populateLanguageSelects(): void {
@@ -70,9 +111,9 @@ function populateLanguageSelects(): void {
 
 function applySettings(settings: PublicSettings): void {
   requireElement<HTMLSelectElement>('#provider').value = settings.provider;
-  requireElement<HTMLInputElement>('#model').value = settings.model;
-  selectLanguage(requireElement<HTMLSelectElement>('#sourceLanguage'), settings.sourceLanguage);
-  selectLanguage(requireElement<HTMLSelectElement>('#targetLanguage'), settings.targetLanguage);
+  selectOption(modelSelect, settings.model, settings.model);
+  selectOption(requireElement<HTMLSelectElement>('#sourceLanguage'), settings.sourceLanguage);
+  selectOption(requireElement<HTMLSelectElement>('#targetLanguage'), settings.targetLanguage);
 
   const mode = form.querySelector<HTMLInputElement>(
     `input[name="renderMode"][value="${settings.renderMode}"]`,
@@ -98,14 +139,16 @@ function setStatus(message: string, tone: 'info' | 'error' = 'info'): void {
 }
 
 /**
- * Selects a stored tag, adding an option on the fly when it is not in the
- * curated list — a hand-edited setting must never be silently replaced.
+ * Selects a stored value, adding an option on the fly when the list does not
+ * contain it — a stored setting must never be silently replaced by whatever
+ * happens to be first in the dropdown.
  */
-function selectLanguage(select: HTMLSelectElement, tag: string): void {
-  if (![...select.options].some((option) => option.value === tag)) {
-    select.append(new Option(tag, tag));
+function selectOption(select: HTMLSelectElement, value: string, label = value): void {
+  if (!value) return;
+  if (![...select.options].some((option) => option.value === value)) {
+    select.append(new Option(label, value));
   }
-  select.value = tag;
+  select.value = value;
 }
 
 function readString(data: FormData, field: string): string {

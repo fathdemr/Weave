@@ -2,6 +2,7 @@ import { ErrorCode, WeaveError } from '../errors';
 import { ProviderId } from '../settings/schema';
 import type {
   ProviderConfig,
+  ProviderModel,
   TranslationProvider,
   TranslationRequest,
   TranslationResult,
@@ -19,7 +20,9 @@ const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 export const geminiProvider: TranslationProvider = {
   id: ProviderId.GEMINI,
   label: 'Google Gemini',
-  supportedModels: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+  // Fallback only — Google retires models regularly, so the options page
+  // asks the API for the live list as soon as a key is available.
+  supportedModels: ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
   apiKeyUrl: 'https://aistudio.google.com/apikey',
 
   async translate(request: TranslationRequest, config: ProviderConfig): Promise<TranslationResult> {
@@ -39,7 +42,42 @@ export const geminiProvider: TranslationProvider = {
 
     return usage ? { segments, usage } : { segments };
   },
+
+  async listModels(config): Promise<ProviderModel[]> {
+    const url = `${config.baseUrl ?? API_BASE}/models?pageSize=200`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, { headers: { 'x-goog-api-key': config.apiKey } });
+    } catch (cause) {
+      throw new WeaveError(ErrorCode.NETWORK_ERROR, 'Could not reach the Gemini API', {
+        retryable: true,
+        cause,
+      });
+    }
+
+    if (!response.ok) throw await toProviderError(response);
+
+    const data = (await response.json()) as GeminiModelList;
+    return (data.models ?? [])
+      .filter((model) => model.supportedGenerationMethods?.includes('generateContent'))
+      .map((model) => ({
+        // The API returns "models/gemini-x"; the generateContent path adds
+        // that prefix itself, so store the bare id.
+        id: model.name.replace(/^models\//, ''),
+        label: model.displayName || model.name.replace(/^models\//, ''),
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  },
 };
+
+interface GeminiModelList {
+  models?: Array<{
+    name: string;
+    displayName?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+}
 
 function buildPrompt(request: TranslationRequest): string {
   const { context, segments } = request;
